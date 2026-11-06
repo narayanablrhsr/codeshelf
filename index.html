@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ssshelf — Code Repository</title>
+  <title>ssshelf — Cloud-Synced Code Repository</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -47,23 +47,28 @@
       </div>
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
       <span class="font-bold text-base tracking-tight text-white flex items-center gap-2">
-        ssshelf <span class="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 font-mono border border-brand-500/30">Codespace IDE</span>
+        ssshelf <span class="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 font-mono border border-brand-500/30">Cloud IDE</span>
       </span>
     </div>
 
-    <!-- View Toggle & Global Actions -->
+    <!-- Actions & Cloud Sync -->
     <div class="flex items-center gap-2">
       <button id="toggleViewModeBtn" onclick="toggleViewMode()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition flex items-center gap-2 border border-slate-700">
         <i id="viewToggleIcon" class="fa-solid fa-code text-brand-400"></i> <span id="viewToggleLabel">IDE Workspace</span>
       </button>
       <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
-      <button id="exportDataBtn" title="Export JSON Package" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1.5 border border-slate-700">
-        <i class="fa-solid fa-download text-[10px]"></i> Export JSON
+      
+      <!-- Cloud Sync Buttons -->
+      <button onclick="syncPushCloud()" title="Push current changes to online Master JSON" class="px-2.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i> Sync to Cloud
       </button>
-      <label title="Import JSON Package" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1.5 border border-slate-700 cursor-pointer">
-        <i class="fa-solid fa-upload text-[10px]"></i> Import JSON
-        <input type="file" id="importDataInput" accept=".json" class="hidden" />
-      </label>
+      <button onclick="syncPullCloud()" title="Pull latest Master JSON from cloud" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1.5 border border-slate-700">
+        <i class="fa-solid fa-cloud-arrow-down text-[10px]"></i> Pull Cloud
+      </button>
+      <button onclick="openConfigModal()" title="Cloud Config Settings" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+
       <button onclick="openSnippetModal()" class="px-3 py-1.5 rounded bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-brand-600/30">
         <i class="fa-solid fa-plus text-[10px]"></i> New File
       </button>
@@ -72,27 +77,24 @@
 
   <!-- ================= VIEW 1: DASHBOARD / HOME GRID VIEW ================= -->
   <div id="dashboardHomeView" class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-    
-    <!-- Project Banner / Home Header with Website Logo/Image theme -->
     <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-brand-950 border border-slate-800 rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
       <div class="flex items-center gap-5">
         <div class="h-16 w-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-brand-500/20 shrink-0">
           <i class="fa-solid fa-box-archive"></i>
         </div>
         <div>
-          <h1 class="text-2xl font-bold text-white tracking-tight">ssshelf Code Repository</h1>
-          <p class="text-xs text-slate-400 mt-1 max-w-md">Your centralized vault for code snippets, scripts, and project files. All items sync automatically to local storage and JSON packages.</p>
+          <h1 class="text-2xl font-bold text-white tracking-tight">ssshelf Master Code Vault</h1>
+          <p class="text-xs text-slate-400 mt-1 max-w-md">Real-time synchronized across all your devices using master JSON bin packages.</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
         <div class="p-4 bg-slate-950/60 border border-slate-800 rounded-xl text-center min-w-[100px]">
           <div id="homeStatTotal" class="text-2xl font-bold text-brand-400 font-mono">0</div>
-          <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Stored Files</div>
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Synced Files</div>
         </div>
       </div>
     </div>
 
-    <!-- Search & Filters -->
     <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
       <div class="relative flex-1 w-full">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
@@ -103,23 +105,20 @@
       </div>
     </div>
 
-    <!-- Cards Grid Container -->
     <div id="homeSnippetsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
-    <!-- Home Empty State -->
     <div id="homeEmptyState" class="hidden flex-col items-center justify-center py-20 px-4 border border-dashed border-slate-800 rounded-2xl bg-slate-900/40 text-center">
       <div class="h-16 w-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-4">
         <i class="fa-solid fa-code-slash"></i>
       </div>
       <h3 class="text-base font-semibold text-slate-300">No code files found</h3>
-      <p class="text-xs text-slate-500 max-w-xs mt-1 mb-4">Add your first code snippet to populate your shelf.</p>
+      <p class="text-xs text-slate-500 max-w-xs mt-1 mb-4">Add your first snippet or pull from your cloud JSON bin.</p>
       <button onclick="openSnippetModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-lg transition">Create Snippet</button>
     </div>
   </div>
 
   <!-- ================= VIEW 2: VS CODE IDE WORKSPACE ================= -->
   <div id="ideWorkspaceView" class="flex-1 flex overflow-hidden hidden">
-    <!-- Left Sidebar: File Explorer -->
     <aside class="w-72 bg-slate-900/60 border-r border-slate-800 flex flex-col shrink-0 select-none">
       <div class="p-3 border-b border-slate-800 flex items-center justify-between">
         <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
@@ -130,7 +129,6 @@
         </button>
       </div>
 
-      <!-- Search Box inside Explorer -->
       <div class="p-2 border-b border-slate-800/60">
         <div class="relative">
           <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-500 text-xs"></i>
@@ -141,19 +139,15 @@
         </div>
       </div>
 
-      <!-- Explorer Tree / File List -->
       <div id="fileExplorerContainer" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1"></div>
 
-      <!-- Quick Stats footer in Sidebar -->
       <div class="p-3 border-t border-slate-800 bg-slate-950/40 text-[11px] text-slate-400 flex justify-between items-center">
         <span>Files: <strong id="statTotal" class="text-brand-400 font-mono">0</strong></span>
         <span>Langs: <strong id="statLanguages" class="text-indigo-400 font-mono">0</strong></span>
       </div>
     </aside>
 
-    <!-- Main Editor Pane -->
     <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
-      <!-- Breadcrumb Bar -->
       <div class="h-9 bg-slate-900/40 border-b border-slate-800 flex items-center justify-between px-4 text-xs shrink-0">
         <div class="flex items-center gap-2 text-slate-400 font-mono">
           <span class="text-slate-500">ssshelf</span> / <span id="currentFileCrumb" class="text-slate-200 font-semibold">Select a file</span>
@@ -161,11 +155,8 @@
         <span id="fileLangBadge" class="px-2 py-0.5 rounded text-[10px] font-mono border hidden"></span>
       </div>
 
-      <!-- Active File Editor & Viewer Workspace -->
       <div class="flex-1 flex overflow-hidden relative">
         <div id="editorPane" class="flex-1 flex flex-col h-full overflow-hidden bg-slate-950">
-          
-          <!-- When a file is selected -->
           <div id="activeFileView" class="hidden flex-1 flex flex-col h-full overflow-hidden">
             <div class="p-3 bg-slate-900/40 border-b border-slate-800 flex items-center justify-between shrink-0">
               <div>
@@ -196,13 +187,12 @@
             </div>
           </div>
 
-          <!-- Empty State -->
           <div id="noFileSelectedState" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
             <div class="h-16 w-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 text-2xl mb-4 shadow-xl">
               <i class="fa-solid fa-code"></i>
             </div>
             <h3 class="text-base font-semibold text-slate-300">No File Selected</h3>
-            <p class="text-xs text-slate-500 max-w-xs mt-1 mb-5">Click on any file in the left sidebar explorer or switch to Dashboard Home view.</p>
+            <p class="text-xs text-slate-500 max-w-xs mt-1 mb-5">Click on any file in the left sidebar explorer.</p>
             <button onclick="openSnippetModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-lg transition shadow-lg shadow-brand-600/30">
               Create New Code File
             </button>
@@ -212,6 +202,33 @@
     </main>
   </div>
 
+  <!-- Config Modal for Cloud Bin -->
+  <div id="configModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+        <h3 class="font-semibold text-slate-100 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-cloud text-brand-400"></i> Cloud Sync Settings
+        </h3>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">JSONBin.io Bin ID</label>
+          <input type="text" id="configBinId" placeholder="e.g. 658b...abc" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-100" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Master API Key (X-Master-Key)</label>
+          <input type="password" id="configApiKey" placeholder="$2a$10$..." class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-100" />
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">Create a free bin on <a href="https://jsonbin.io/" target="_blank" class="text-brand-400 underline">JSONBin.io</a>, paste your Bin ID and Master Key here, and your devices will sync automatically.</p>
+      </div>
+      <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex justify-end gap-2">
+        <button onclick="closeConfigModal()" class="px-3 py-1.5 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancel</button>
+        <button onclick="saveConfigSettings()" class="px-3 py-1.5 bg-brand-600 text-white text-xs font-semibold rounded-lg">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Create/Edit Modal -->
   <div id="snippetModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
@@ -219,15 +236,13 @@
         <h3 id="modalTitle" class="font-semibold text-slate-100 flex items-center gap-2 text-sm">
           <i class="fa-solid fa-file-code text-brand-400"></i> New Code File
         </h3>
-        <button id="closeModalBtn" class="text-slate-400 hover:text-white transition">
-          <i class="fa-solid fa-xmark text-base"></i>
-        </button>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-base"></i></button>
       </div>
       <form id="snippetForm" class="p-5 space-y-4 overflow-y-auto custom-scrollbar">
         <input type="hidden" id="formSnippetId" />
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">File Name / Title *</label>
-          <input type="text" id="formTitle" required placeholder="e.g. clean_data.py or script.js" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:outline-none focus:border-brand-500 text-slate-100 font-mono" />
+          <input type="text" id="formTitle" required placeholder="e.g. script.js" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:outline-none focus:border-brand-500 text-slate-100 font-mono" />
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -242,14 +257,12 @@
               <option value="sql">SQL</option>
               <option value="json">JSON</option>
               <option value="bash">Bash / Shell</option>
-              <option value="typescript">TypeScript</option>
-              <option value="markdown">Markdown</option>
               <option value="other">Other / Plain Text</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Category / Folder *</label>
-            <input type="text" id="formCategory" placeholder="e.g. Scripts, Utilities, Algorithms" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:outline-none focus:border-brand-500 text-slate-100" />
+            <input type="text" id="formCategory" placeholder="e.g. Scripts" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:outline-none focus:border-brand-500 text-slate-100" />
           </div>
         </div>
         <div>
@@ -258,16 +271,16 @@
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">Tags (Comma separated)</label>
-          <input type="text" id="formTags" placeholder="e.g. pandas, data, cleanup" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:outline-none focus:border-brand-500 text-slate-100" />
+          <input type="text" id="formTags" placeholder="e.g. api, utility" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm focus:outline-none focus:border-brand-500 text-slate-100" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">Source Code *</label>
-          <textarea id="formCode" required rows="12" placeholder="# Write or paste code here..." class="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs code-font focus:outline-none focus:border-brand-500 text-emerald-400 custom-scrollbar leading-relaxed"></textarea>
+          <textarea id="formCode" required rows="12" placeholder="# Write code here..." class="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs code-font focus:outline-none focus:border-brand-500 text-emerald-400 custom-scrollbar leading-relaxed"></textarea>
         </div>
       </form>
       <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex justify-end gap-2">
-        <button id="cancelModalBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition">Cancel</button>
-        <button id="saveSnippetBtn" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-lg transition">Save File</button>
+        <button id="cancelModalBtn" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancel</button>
+        <button id="saveSnippetBtn" class="px-4 py-2 bg-brand-600 text-white text-xs font-semibold rounded-lg">Save File</button>
       </div>
     </div>
   </div>
@@ -276,35 +289,14 @@
 
   <!-- JavaScript Logic -->
   <script>
-    const STORAGE_KEY = 'ssshelf_ide_code_snippets_v4';
-
-    const DEFAULT_SNIPPETS = [
-      {
-        id: 'snippet-1',
-        title: 'clean_data.py',
-        language: 'python',
-        category: 'Data Processing',
-        tags: ['python', 'pandas', 'data'],
-        description: 'Quick script to clean null values and trim whitespace from DataFrame text columns.',
-        code: `import pandas as pd\n\ndef clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:\n    cleaned_df = df.dropna(how='all')\n    for col in cleaned_df.select_dtypes(include=['object', 'string']).columns:\n        cleaned_df[col] = cleaned_df[col].astype(str).str.strip()\n    return cleaned_df`,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'snippet-2',
-        title: 'fetch_api.js',
-        language: 'javascript',
-        category: 'Utilities',
-        tags: ['fetch', 'async', 'javascript'],
-        description: 'Reusable wrapper around fetch API with timeout support.',
-        code: `async function customFetch(url, options = {}) {\n  const { timeout = 8000, ...fetchOptions } = options;\n  const controller = new AbortController();\n  const id = setTimeout(() => controller.abort(), timeout);\n  try {\n    const response = await fetch(url, { ...fetchOptions, signal: controller.signal });\n    clearTimeout(id);\n    if (!response.ok) throw new Error(\`HTTP Error: \${response.status}\`);\n    return await response.json();\n  } catch (error) {\n    clearTimeout(id);\n    throw error;\n  }\n}`,
-        createdAt: new Date(Date.now() - 86400000).toISOString()
-      }
-    ];
+    const STORAGE_KEY = 'ssshelf_cloud_snippets_v5';
+    const BIN_ID_KEY = 'ssshelf_jsonbin_id';
+    const API_KEY_KEY = 'ssshelf_jsonbin_key';
 
     let snippets = [];
     let activeSnippetId = null;
     let searchQuery = '';
-    let currentView = 'dashboard'; // 'dashboard' or 'ide'
+    let currentView = 'dashboard';
 
     const LANG_CONFIG = {
       javascript: { label: 'JS', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30', icon: 'fa-js text-amber-400', ext: 'js' },
@@ -330,20 +322,107 @@
         if (stored) {
           snippets = JSON.parse(stored);
         } else {
-          snippets = [...DEFAULT_SNIPPETS];
+          snippets = [
+            {
+              id: 'snippet-1',
+              title: 'clean_data.py',
+              language: 'python',
+              category: 'Data Processing',
+              tags: ['python', 'pandas'],
+              description: 'Quick script to clean null values.',
+              code: `import pandas as pd\n\ndef clean_dataframe(df):\n    return df.dropna(how='all')`,
+              createdAt: new Date().toISOString()
+            }
+          ];
           saveToStorage();
         }
-      } catch (err) {
-        snippets = [...DEFAULT_SNIPPETS];
-      }
+      } catch (err) { snippets = []; }
     }
 
     function saveToStorage() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
-      } catch (err) {
-        showToast('Failed to save locally', 'error');
+      } catch (err) {}
+    }
+
+    // Cloud Sync Functions (JSONBin.io API)
+    async function syncPushCloud() {
+      const binId = localStorage.getItem(BIN_ID_KEY);
+      const apiKey = localStorage.getItem(API_KEY_KEY);
+      if (!binId || !apiKey) {
+        showToast('Please set your JSONBin ID & API Key in settings first!', 'error');
+        openConfigModal();
+        return;
       }
+
+      showToast('Pushing master JSON to cloud...', 'info');
+      try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': apiKey
+          },
+          body: JSON.stringify({ snippets })
+        });
+        if (response.ok) {
+          showToast('Successfully synced to cloud!', 'success');
+        } else {
+          showToast('Failed to push to cloud', 'error');
+        }
+      } catch (err) {
+        showToast('Network error during cloud push', 'error');
+      }
+    }
+
+    async function syncPullCloud() {
+      const binId = localStorage.getItem(BIN_ID_KEY);
+      const apiKey = localStorage.getItem(API_KEY_KEY);
+      if (!binId || !apiKey) {
+        showToast('Please set your JSONBin ID & API Key in settings first!', 'error');
+        openConfigModal();
+        return;
+      }
+
+      showToast('Pulling latest master JSON from cloud...', 'info');
+      try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+          headers: { 'X-Master-Key': apiKey }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.record && Array.isArray(data.record.snippets)) {
+            snippets = data.record.snippets;
+            saveToStorage();
+            if (snippets.length) activeSnippetId = snippets[0].id;
+            if (currentView === 'dashboard') renderHomeGrid(); else renderApp();
+            showToast('Cloud pull successful! Master updated.', 'success');
+          }
+        } else {
+          showToast('Failed to pull from cloud', 'error');
+        }
+      } catch (err) {
+        showToast('Network error during cloud pull', 'error');
+      }
+    }
+
+    function openConfigModal() {
+      document.getElementById('configBinId').value = localStorage.getItem(BIN_ID_KEY) || '';
+      document.getElementById('configApiKey').value = localStorage.getItem(API_KEY_KEY) || '';
+      document.getElementById('configModal').classList.remove('hidden');
+    }
+
+    function closeConfigModal() {
+      document.getElementById('configModal').classList.add('hidden');
+    }
+
+    function saveConfigSettings() {
+      const binId = document.getElementById('configBinId').value.trim();
+      const apiKey = document.getElementById('configApiKey').value.trim();
+      localStorage.setItem(BIN_ID_KEY, binId);
+      localStorage.setItem(API_KEY_KEY, apiKey);
+      closeConfigModal();
+      showToast('Cloud configuration saved!', 'success');
     }
 
     function setupTabKeyInTextarea() {
@@ -359,31 +438,14 @@
     }
 
     function bindEvents() {
-      const explorerSearch = document.getElementById('explorerSearchInput');
-      const explorerClear = document.getElementById('explorerClearSearchBtn');
-      explorerSearch.addEventListener('input', (e) => {
+      document.getElementById('explorerSearchInput').addEventListener('input', (e) => {
         searchQuery = e.target.value.toLowerCase().trim();
-        explorerClear.classList.toggle('hidden', searchQuery === '');
+        document.getElementById('explorerClearSearchBtn').classList.toggle('hidden', searchQuery === '');
         renderFileExplorer();
       });
-      explorerClear.addEventListener('click', () => {
-        explorerSearch.value = '';
-        searchQuery = '';
-        explorerClear.classList.add('hidden');
-        renderFileExplorer();
-      });
-
-      const homeSearch = document.getElementById('homeSearchInput');
-      const homeClear = document.getElementById('homeClearSearchBtn');
-      homeSearch.addEventListener('input', (e) => {
+      document.getElementById('homeSearchInput').addEventListener('input', (e) => {
         searchQuery = e.target.value.toLowerCase().trim();
-        homeClear.classList.toggle('hidden', searchQuery === '');
-        renderHomeGrid();
-      });
-      homeClear.addEventListener('click', () => {
-        homeSearch.value = '';
-        searchQuery = '';
-        homeClear.classList.add('hidden');
+        document.getElementById('homeClearSearchBtn').classList.toggle('hidden', searchQuery === '');
         renderHomeGrid();
       });
 
@@ -405,9 +467,6 @@
       document.getElementById('deleteCodeBtn').addEventListener('click', () => {
         if (activeSnippetId) deleteSnippet(activeSnippetId);
       });
-
-      document.getElementById('exportDataBtn').addEventListener('click', exportJSONBackup);
-      document.getElementById('importDataInput').addEventListener('change', importJSONBackup);
     }
 
     function toggleViewMode() {
@@ -424,8 +483,6 @@
         btnLabel.textContent = 'IDE Workspace';
         btnIcon.className = 'fa-solid fa-code text-brand-400';
         searchQuery = '';
-        document.getElementById('homeSearchInput').value = '';
-        document.getElementById('homeClearSearchBtn').classList.add('hidden');
         renderHomeGrid();
       } else {
         dashView.classList.remove('flex');
@@ -434,8 +491,6 @@
         btnLabel.textContent = 'Dashboard Home';
         btnIcon.className = 'fa-solid fa-house text-brand-400';
         searchQuery = '';
-        document.getElementById('explorerSearchInput').value = '';
-        document.getElementById('explorerClearSearchBtn').classList.add('hidden');
         renderApp();
       }
     }
@@ -453,12 +508,7 @@
     }
 
     function renderFileExplorer() {
-      const filtered = snippets.filter(s => {
-        if (!searchQuery) return true;
-        const q = searchQuery;
-        return s.title.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q)) || s.code.toLowerCase().includes(q);
-      });
-
+      const filtered = snippets.filter(s => !searchQuery || s.title.toLowerCase().includes(searchQuery) || s.code.toLowerCase().includes(searchQuery));
       const container = document.getElementById('fileExplorerContainer');
       if (filtered.length === 0) {
         container.innerHTML = `<div class="p-4 text-center text-xs text-slate-500 italic">No files found</div>`;
@@ -474,24 +524,11 @@
 
       let html = '';
       Object.keys(groups).sort().forEach(cat => {
-        html += `
-          <div class="mb-2">
-            <div class="px-2 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <i class="fa-solid fa-folder text-amber-500/80 text-[10px]"></i> ${escapeHtml(cat)}
-            </div>
-            <div class="ml-2 space-y-0.5 border-l border-slate-800/80 pl-2 mt-1">
-        `;
+        html += `<div class="mb-2"><div class="px-2 py-1 text-[11px] font-semibold text-slate-400 uppercase">${escapeHtml(cat)}</div><div class="ml-2 space-y-0.5 border-l border-slate-800 pl-2 mt-1">`;
         groups[cat].forEach(s => {
           const langConf = LANG_CONFIG[s.language] || LANG_CONFIG.other;
           const isActive = s.id === activeSnippetId;
-          html += `
-            <button onclick="selectSnippet('${s.id}')" class="w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center justify-between group transition ${isActive ? 'bg-brand-500/20 text-brand-300 font-semibold border border-brand-500/30' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'}">
-              <span class="truncate flex items-center gap-2">
-                <i class="fa-solid ${langConf.icon} text-xs"></i>
-                <span class="truncate">${escapeHtml(s.title)}</span>
-              </span>
-            </button>
-          `;
+          html += `<button onclick="selectSnippet('${s.id}')" class="w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center justify-between group transition ${isActive ? 'bg-brand-500/20 text-brand-300 font-semibold border border-brand-500/30' : 'text-slate-300 hover:bg-slate-800'}"><span class="truncate flex items-center gap-2"><i class="fa-solid ${langConf.icon} text-xs"></i><span class="truncate">${escapeHtml(s.title)}</span></span></button>`;
         });
         html += `</div></div>`;
       });
@@ -505,12 +542,7 @@
 
     function renderHomeGrid() {
       updateStats();
-      const filtered = snippets.filter(s => {
-        if (!searchQuery) return true;
-        const q = searchQuery;
-        return s.title.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q)) || s.code.toLowerCase().includes(q);
-      });
-
+      const filtered = snippets.filter(s => !searchQuery || s.title.toLowerCase().includes(searchQuery) || s.code.toLowerCase().includes(searchQuery));
       const grid = document.getElementById('homeSnippetsGrid');
       const empty = document.getElementById('homeEmptyState');
 
@@ -526,29 +558,26 @@
 
       grid.innerHTML = filtered.map(s => {
         const langConf = LANG_CONFIG[s.language] || LANG_CONFIG.other;
-        const tags = (s.tags || []).map(t => `<span class="px-2 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px] text-slate-400">#${escapeHtml(t)}</span>`).join(' ');
-
         return `
           <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
             <div class="space-y-3">
               <div class="flex items-start justify-between">
                 <div>
-                  <span class="text-[10px] uppercase tracking-wider text-slate-500 block mb-0.5">${escapeHtml(s.category || 'General')}</span>
+                  <span class="text-[10px] uppercase text-slate-500 block mb-0.5">${escapeHtml(s.category || 'General')}</span>
                   <h3 onclick="openSnippetInIde('${s.id}')" class="font-bold text-slate-200 text-sm hover:text-brand-400 transition cursor-pointer">${escapeHtml(s.title)}</h3>
                 </div>
                 <span class="text-xs font-mono font-semibold px-2 py-0.5 rounded border ${langConf.color}">${langConf.label}</span>
               </div>
               <p class="text-xs text-slate-400 line-clamp-2">${escapeHtml(s.description || 'No description.')}</p>
               <div class="bg-slate-950 rounded-lg p-3 border border-slate-900 overflow-hidden">
-                <pre><code class="text-[11px] code-font text-emerald-400/90 block truncate">${escapeHtml(s.code.split('\n')[0] || '')}</code></pre>
+                <pre><code class="text-[11px] code-font text-emerald-400 block truncate">${escapeHtml(s.code.split('\n')[0] || '')}</code></pre>
               </div>
-              <div class="flex flex-wrap gap-1">${tags}</div>
             </div>
-            <div class="flex items-center justify-between border-t border-slate-800/80 pt-3 mt-4 text-xs">
+            <div class="flex items-center justify-between border-t border-slate-800 pt-3 mt-4 text-xs">
               <span class="text-slate-500 text-[11px]">${new Date(s.createdAt).toLocaleDateString()}</span>
               <div class="flex items-center gap-1.5">
-                <button onclick="openSnippetInIde('${s.id}')" class="px-2.5 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium transition">Open in IDE</button>
-                <button onclick="deleteSnippet('${s.id}')" class="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
+                <button onclick="openSnippetInIde('${s.id}')" class="px-2.5 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white text-xs">Open in IDE</button>
+                <button onclick="deleteSnippet('${s.id}')" class="p-1.5 rounded bg-rose-500/10 text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
               </div>
             </div>
           </div>
@@ -558,7 +587,7 @@
 
     function openSnippetInIde(id) {
       activeSnippetId = id;
-      toggleViewMode(); // switch to IDE
+      toggleViewMode();
     }
 
     function renderActiveEditor() {
@@ -586,8 +615,6 @@
       langBadge.className = `px-2 py-0.5 rounded text-[10px] font-mono border ${langConf.color}`;
       langBadge.classList.remove('hidden');
 
-      document.getElementById('activeTags').innerHTML = (snippet.tags || []).map(t => `<span class="px-2 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px] text-slate-400">#${escapeHtml(t)}</span>`).join(' ');
-
       document.getElementById('activeCodeContent').textContent = snippet.code;
       const linesCount = snippet.code.split('\n').length;
       let linesHtml = '';
@@ -596,8 +623,7 @@
     }
 
     function openSnippetModal(id = null) {
-      const form = document.getElementById('snippetForm');
-      form.reset();
+      document.getElementById('snippetForm').reset();
       if (id) {
         const s = snippets.find(item => item.id === id);
         if (!s) return;
@@ -606,7 +632,6 @@
         document.getElementById('formLanguage').value = s.language;
         document.getElementById('formCategory').value = s.category || '';
         document.getElementById('formDescription').value = s.description || '';
-        document.getElementById('formTags').value = (s.tags || []).join(', ');
         document.getElementById('formCode').value = s.code;
         document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-pen text-brand-400"></i> Edit File`;
       } else {
@@ -625,7 +650,6 @@
       const language = document.getElementById('formLanguage').value;
       const category = document.getElementById('formCategory').value.trim() || 'General';
       const description = document.getElementById('formDescription').value.trim();
-      const tags = document.getElementById('formTags').value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
       const code = document.getElementById('formCode').value;
       const snippetId = document.getElementById('formSnippetId').value;
 
@@ -637,35 +661,33 @@
       if (snippetId) {
         const idx = snippets.findIndex(s => s.id === snippetId);
         if (idx !== -1) {
-          snippets[idx] = { ...snippets[idx], title, language, category, description, tags, code };
+          snippets[idx] = { ...snippets[idx], title, language, category, description, code };
           showToast('File updated successfully', 'success');
         }
       } else {
-        const newS = { id: 'snippet-' + Date.now(), title, language, category, description, tags, code, createdAt: new Date().toISOString() };
+        const newS = { id: 'snippet-' + Date.now(), title, language, category, description, code, createdAt: new Date().toISOString() };
         snippets.unshift(newS);
         activeSnippetId = newS.id;
-        showToast('New file added to shelf', 'success');
+        showToast('New file added', 'success');
       }
 
       saveToStorage();
       closeSnippetModal();
-      if (currentView === 'dashboard') renderHomeGrid();
-      else renderApp();
+      if (currentView === 'dashboard') renderHomeGrid(); else renderApp();
     }
 
     function deleteSnippet(id) {
-      if (confirm('Are you sure you want to delete this file?')) {
+      if (confirm('Delete this file?')) {
         snippets = snippets.filter(s => s.id !== id);
         saveToStorage();
         if (activeSnippetId === id) activeSnippetId = snippets.length ? snippets[0].id : null;
-        if (currentView === 'dashboard') renderHomeGrid();
-        else renderApp();
+        if (currentView === 'dashboard') renderHomeGrid(); else renderApp();
         showToast('File deleted', 'info');
       }
     }
 
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => showToast('Code copied to clipboard!', 'success'));
+      navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!', 'success'));
     }
 
     function downloadSnippetFile(s) {
@@ -679,34 +701,6 @@
       link.click();
       URL.revokeObjectURL(url);
       showToast(`Downloading ${filename}`, 'info');
-    }
-
-    function exportJSONBackup() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(snippets, null, 2));
-      const a = document.createElement('a');
-      a.href = dataStr;
-      a.download = `ssshelf_package_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-      showToast('JSON package exported successfully', 'success');
-    }
-
-    function importJSONBackup(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const parsed = JSON.parse(ev.target.result);
-          if (Array.isArray(parsed)) {
-            snippets = parsed;
-            saveToStorage();
-            if (snippets.length) activeSnippetId = snippets[0].id;
-            if (currentView === 'dashboard') renderHomeGrid(); else renderApp();
-            showToast('JSON package imported successfully!', 'success');
-          }
-        } catch (err) { showToast('Invalid JSON file format', 'error'); }
-      };
-      reader.readAsText(file);
     }
 
     function showToast(msg, type = 'info') {
